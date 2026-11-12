@@ -1,0 +1,80 @@
+name: Explain This Peter
+description: Comment "explain this Peter" on a pull request to get a parkour video where Peter and Brian explain it.
+branding:
+  icon: video
+  color: yellow
+inputs:
+  anthropic-api-key:
+    description: Anthropic API key.
+    required: true
+  anthropic-model:
+    description: Claude model that writes the script.
+    required: false
+    default: claude-haiku-5-5
+  anthropic-effort:
+    description: Effort level (low, medium, high). Set to an empty string for models that do not support effort.
+    required: false
+    default: low
+  fish-api-key:
+    description: Fish Audio API key.
+    required: true
+  fish-model:
+    description: Fish Audio TTS model. s2.1-pro-free works without paid API credit.
+    required: false
+    default: s2.1-pro-free
+  fish-speed:
+    description: Speech speed, 0.5 to 2.0.
+    required: false
+    default: "1.15"
+  peter-voice-id:
+    description: Fish Audio voice model ID for Peter.
+    required: false
+    default: d75c270eaee14c8aa1e9e980cc37cf1b
+  brian-voice-id:
+    description: Fish Audio voice model ID for Brian.
+    required: false
+    default: e88928ec5022418cad0606fcfc809b8a
+  characters-dir:
+    description: Directory in your repo with peter.png and brian.png. Empty uses the images that come with the action.
+    required: false
+    default: ""
+  github-token:
+    description: Token that can upload release assets and comment on pull requests.
+    required: false
+    default: ${{ github.token }}
+runs:
+  using: composite
+  steps:
+    - name: React to the comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: gh api "repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content=eyes > /dev/null
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install ffmpeg, fonts, and Python packages
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq ffmpeg fonts-dejavu-core > /dev/null
+        pip install -q -r "$GITHUB_ACTION_PATH/requirements.txt"
+    - name: Make and post the video
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        ANTHROPIC_MODEL: ${{ inputs.anthropic-model }}
+        ANTHROPIC_EFFORT: ${{ inputs.anthropic-effort }}
+        FISH_API_KEY: ${{ inputs.fish-api-key }}
+        FISH_MODEL: ${{ inputs.fish-model }}
+        FISH_SPEED: ${{ inputs.fish-speed }}
+        PETER_VOICE_ID: ${{ inputs.peter-voice-id }}
+        BRIAN_VOICE_ID: ${{ inputs.brian-voice-id }}
+        CHARACTERS_DIR: ${{ inputs.characters-dir && format('{0}/{1}', github.workspace, inputs.characters-dir) || '' }}
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        python "$GITHUB_ACTION_PATH/peter.py" \
+          --repo "${{ github.repository }}" \
+          --pr "${{ github.event.issue.number }}" \
+          --out "$RUNNER_TEMP/pr-${{ github.event.issue.number }}-${{ github.run_id }}.mp4" \
+          --post
