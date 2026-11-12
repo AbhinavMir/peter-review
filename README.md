@@ -77,7 +77,6 @@ The workflow needs these permissions: `contents: write` (release upload), `pull-
 | `action.yml` | The composite action. |
 | `peter.py` | The full pipeline. It also runs locally. |
 | `examples/peter-review.yml` | The workflow for target repos. |
-| `.github/workflows/peter-review.yml` | The same workflow, for PRs in this repo. |
 | `assets/background.mp4` | 4 minutes of parkour footage, 720x1280. Each video starts at a random point. |
 | `assets/characters/` | `peter.png` and `brian.png`, transparent PNGs. |
 
