@@ -103,6 +103,7 @@ set -a; source .env; set +a
 
 The video goes to `out/pr-123.mp4` and the script goes to `out/pr-123.json`. Other flags:
 
+- `--commit SHA` in place of `--pr` explains one commit, for repos that do not use PRs (for example `--repo torvalds/linux --commit 51628610f918`). `--post` does not work with `--commit`.
 - `--script out/pr-123.json` uses a saved script and does not call Claude.
 - `--post` uploads the video and comments on the PR.
 

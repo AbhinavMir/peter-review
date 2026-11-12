@@ -70,7 +70,12 @@ It is a conversation between two cartoon characters, Peter and Brian, over parko
 Peter is loud, goofy, and overconfident, but what he says about the code is correct.
 Brian is the dry, sarcastic, smart one. He asks questions, pushes back, and calls out the weak points.
 Make it funny and fast, with real banter, but keep every technical claim correct.
+Explain it so that a junior developer understands. Use plain words. When you must use a technical
+term, explain it in a few words the first time.
 Never invent facts that the diff does not show.
+The change can be a pull request or a single commit. Call it what the input says it is.
+Raise a con only when the diff clearly shows it. Do not raise a concern that the description
+already answers. Do not call two things a contradiction unless they really conflict.
 
 Rules for each line:
 - Spoken text only: no markdown, no code, no emojis, no stage directions.
@@ -106,6 +111,22 @@ def fetch_pr(repo, pr):
     return meta, diff
 
 
+def fetch_commit(repo, sha):
+    c = json.loads(sh("gh", "api", f"repos/{repo}/commits/{sha}"))
+    title, _, body = c["commit"]["message"].partition("\n")
+    meta = {
+        "kind": "commit",
+        "title": title,
+        "body": body.strip(),
+        "additions": c["stats"]["additions"],
+        "deletions": c["stats"]["deletions"],
+        "changedFiles": len(c["files"]),
+        "files": [{"path": f["filename"], "additions": f["additions"], "deletions": f["deletions"]} for f in c["files"]],
+    }
+    diff = sh("gh", "api", "-H", "Accept: application/vnd.github.diff", f"repos/{repo}/commits/{sha}")
+    return meta, diff
+
+
 def write_script(meta, diff):
     changed = meta["additions"] + meta["deletions"]
     small = changed <= SMALL_PR_LINES
@@ -118,10 +139,11 @@ def write_script(meta, diff):
         diff = diff[:MAX_DIFF_CHARS]
     files = "\n".join(f"- {f['path']} (+{f['additions']} -{f['deletions']})" for f in meta["files"])
     user = (
-        f"PR title: {meta['title']}\n"
+        f"Type: {meta.get('kind', 'pull request')}\n"
+        f"Title: {meta['title']}\n"
         f"Changed lines: +{meta['additions']} -{meta['deletions']} in {meta['changedFiles']} files\n"
         f"Files:\n{files}\n\n"
-        f"PR description:\n{meta['body'] or '(empty)'}\n\n"
+        f"Description:\n{meta['body'] or '(empty)'}\n\n"
         + ("NOTE: the diff below is cut off because it is very large. Say so in the cons.\n\n" if truncated else "")
         + f"Diff:\n{diff}"
     )
@@ -367,21 +389,26 @@ def post(repo, pr, video, script):
 def main():
     p = argparse.ArgumentParser(description="Make a parkour explainer video for a GitHub PR.")
     p.add_argument("--repo", required=True, help="owner/name")
-    p.add_argument("--pr", required=True, type=int)
+    target = p.add_mutually_exclusive_group(required=True)
+    target.add_argument("--pr", type=int)
+    target.add_argument("--commit", help="commit SHA, for repos that do not use PRs")
     p.add_argument("--out", type=Path, help="output .mp4 path (default: out/pr-<n>.mp4)")
     p.add_argument("--post", action="store_true", help="upload the video and comment on the PR")
     p.add_argument("--script", type=Path, help="reuse a saved script .json instead of calling Claude")
     args = p.parse_args()
 
     check_assets()
-    out = args.out or ROOT / "out" / f"pr-{args.pr}.mp4"
+    if args.post and not args.pr:
+        sys.exit("--post works only with --pr")
+    name = f"pr-{args.pr}" if args.pr else f"commit-{args.commit[:12]}"
+    out = args.out or ROOT / "out" / f"{name}.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
 
     if args.script:
         script = json.loads(args.script.read_text())
     else:
-        meta, diff = fetch_pr(args.repo, args.pr)
-        print(f"PR #{args.pr}: {meta['title']} (+{meta['additions']} -{meta['deletions']})")
+        meta, diff = fetch_pr(args.repo, args.pr) if args.pr else fetch_commit(args.repo, args.commit)
+        print(f"{name}: {meta['title']} (+{meta['additions']} -{meta['deletions']})")
         script = write_script(meta, diff)
         out.with_suffix(".json").write_text(json.dumps(script, indent=2))
     lines = script["lines"]
