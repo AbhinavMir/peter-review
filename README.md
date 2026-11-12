@@ -1,5 +1,7 @@
 # Peter Review
 
+> this is for fun, this is mostly satire. if you entire codebase burns because of this, blame yourself. Do not install, actually.
+
 A GitHub Action. When a user comments `explain this Peter` on a pull request, the action makes a vertical video and posts it on the PR. In the video, Peter and Brian talk through the PR over parkour footage, with captions and code on screen.
 
 The video covers:
