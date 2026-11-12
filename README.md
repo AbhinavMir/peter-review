@@ -1,4 +1,4 @@
-# Explain This Peter
+# Peter Review
 
 A GitHub Action. When a user comments `explain this Peter` on a pull request, the action makes a vertical video and posts it on the PR. In the video, Peter and Brian talk through the PR over parkour footage, with captions and code on screen.
 
@@ -18,7 +18,7 @@ This README is for coding agents. A human can follow it too.
 2. Claude writes a dialogue between Peter and Brian. Each line has a section tag and an optional code snippet from the diff.
 3. Fish Audio speaks each line with the voice of the speaker.
 4. Pillow draws the captions, the code cards, and the speaker image. ffmpeg puts them on `assets/background.mp4` with the voice.
-5. The action uploads the video to a release named `explain-this-peter` in the repo. Then it comments on the PR with the video link and the transcript.
+5. The action uploads the video to a release named `peter-review` in the repo. Then it comments on the PR with the video link and the transcript.
 
 A run uses one Claude call and one Fish Audio call per dialogue line (about 20 lines).
 
@@ -43,7 +43,7 @@ Do these steps in the repo that will use the bot (the target repo).
    gh variable set PETER_ANTHROPIC_MODEL --repo OWNER/REPO --body claude-sonnet-5-5
    ```
 
-4. Copy `examples/explain-peter.yml` from this repo to `.github/workflows/explain-peter.yml` in the target repo. Commit it to the default branch. GitHub runs `issue_comment` workflows only from the default branch.
+4. Copy `examples/peter-review.yml` from this repo to `.github/workflows/peter-review.yml` in the target repo. Commit it to the default branch. GitHub runs `issue_comment` workflows only from the default branch.
 
 5. Test: open a PR in the target repo and comment `explain this Peter`. The bot adds an 👀 reaction to the comment. The comment with the video comes after the render.
 
@@ -76,8 +76,8 @@ The workflow needs these permissions: `contents: write` (release upload), `pull-
 |---|---|
 | `action.yml` | The composite action. |
 | `peter.py` | The full pipeline. It also runs locally. |
-| `examples/explain-peter.yml` | The workflow for target repos. |
-| `.github/workflows/explain-peter.yml` | The same workflow, for PRs in this repo. |
+| `examples/peter-review.yml` | The workflow for target repos. |
+| `.github/workflows/peter-review.yml` | The same workflow, for PRs in this repo. |
 | `assets/background.mp4` | 4 minutes of parkour footage, 720x1280. Each video starts at a random point. |
 | `assets/characters/` | `peter.png` and `brian.png`, transparent PNGs. |
 

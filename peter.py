@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Explain This Peter: turn a GitHub PR into a vertical parkour explainer video.
+"""Peter Review: turn a GitHub PR into a vertical parkour explainer video.
 
 Pipeline: PR diff (gh) -> script (Claude Haiku) -> voice (Fish Audio) -> captions + background (ffmpeg).
 """
@@ -347,17 +347,17 @@ def comment_body(script, video_url, pr):
         f"**{CHARACTERS[l['speaker']]['name']}:** {l['text']}"
         + (f"\n```diff\n{l['code']}\n```" if l["code"].strip() else "")
         for l in script["lines"])
-    return (f"## Explain This Peter: PR #{pr}\n\n"
+    return (f"## Peter Review: PR #{pr}\n\n"
             f"[Watch the video]({video_url})\n\n"
             f"<details><summary>Transcript</summary>\n\n{transcript}\n\n</details>\n")
 
 
 def post(repo, pr, video, script):
-    tag = "explain-this-peter"
+    tag = "peter-review"
     exists = subprocess.run(["gh", "release", "view", tag, "--repo", repo], capture_output=True).returncode == 0
     if not exists:
-        sh("gh", "release", "create", tag, "--repo", repo, "--title", "Explain This Peter videos",
-           "--notes", "Videos made by the Explain This Peter bot.", "--prerelease")
+        sh("gh", "release", "create", tag, "--repo", repo, "--title", "Peter Review videos",
+           "--notes", "Videos made by the Peter Review bot.", "--prerelease")
     sh("gh", "release", "upload", tag, str(video), "--repo", repo, "--clobber")
     url = f"https://github.com/{repo}/releases/download/{tag}/{video.name}"
     sh("gh", "pr", "comment", str(pr), "--repo", repo, "--body", comment_body(script, url, pr))
